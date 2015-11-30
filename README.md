@@ -1,26 +1,32 @@
-<img src="https://s3.amazonaws.com/freecodecamp/wide-social-banner.png">
+![](https://s3.amazonaws.com/freecodecamp/wide-social-banner.png)
 
 [![Throughput Graph](https://graphs.waffle.io/freecodecamp/freecodecamp/throughput.svg)](https://waffle.io/freecodecamp/freecodecamp/metrics)
 
 [![Join the chat at https://gitter.im/freecodecamp/freecodecamp](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/freecodecamp/freecodecamp?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Welcome to Free Code Camp's open source codebase!
+Welcome to Free Code Camp's open source codebase and curriculum!
 =======================
 
-#Note
-We're currently very close to moving from Express to Loopback. As such, please keep in mind that the instructions here for setting up and running the project do not directly translate to the staging branch. Additionally, the file structure is quite a bit different. As always, the staging branch is the appropriate place to branch off of to fix/add something!
+Free Code Camp is an open-source community where you learn to code and help nonprofits.
 
-Free Code Camp is an open-source community of busy people who learn to code, then build projects for nonprofits.
+You start by working through our self-paced, browser-based full stack JavaScript curriculum. 
 
-Our campers (students) start by working through our free, self-paced, browser-based curriculum. Next, they build several practice projects. Finally, we pair two campers together with a stakeholder from a nonprofit organization, and help them build the solution the nonprofit has requested.
+After you complete the first 400 hours worth of challenges (which involves building 10 single-page apps), you'll earn your Front End Development Certification.
+
+After you complete the second 400 hours worth of challenges (which involves building and deploying 5 full stack apps), you'll earn your Full Stack Development Certification.
+
+Then we'll pair you with another camper, an agile project manager, and a stakeholder from a nonprofit organization. Together, you'll plan and build an app that helps that nonprofit carry out its mission more effectively.
 
 **We help our campers build job-worthy portfolios of real apps used by real people, while helping nonprofits.**
 
-80% of our campers are over 25, and nearly a fifth of our campers are women.
+This code is running live at [FreeCodeCamp.com](http://www.FreeCodeCamp.com). We also have [Gitter](https://gitter.im/FreeCodeCamp/FreeCodeCamp), a [Medium publication](http://medium.freecodecamp.com), and even a [Twitch.tv channel](http://twitch.tv/freecodecamp).
 
-This code is running live at [FreeCodeCamp.com](http://www.FreeCodeCamp.com). We also have [Gitter](https://gitter.im/FreeCodeCamp/FreeCodeCamp), a [blog](http://blog.freecodecamp.com), and even a [Twitch.tv channel](http://twitch.tv/freecodecamp).
+[Join our community here](http://www.freecodecamp.com/signin).
 
-[Join our community](http://www.freecodecamp.com/signin)!
+Wiki
+------------
+
+We would love your help expanding our [wiki](https://github.com/freecodecamp/freecodecamp/wiki). Our goal is to become a great resource for people learning to code, building local coding communities, and applying for coding jobs.
 
 Contributing
 ------------
@@ -31,10 +37,9 @@ We welcome pull requests from Free Code Camp campers (our students) and seasoned
 2.  Pick an issue that nobody has claimed and start working on it. If your issue isn't on the board, open an issue. If you think you can fix it yourself, start working on it. Feel free to ask for help in our [Gitter](https://gitter.im/FreeCodeCamp/FreeCodeCamp).
 3.  Fork the project ([Need help with forking a project?](https://help.github.com/articles/fork-a-repo/)). You'll do all of your work on your forked copy.
 4.  Create a branch specific to the issue or feature you are working on. Push your work to that branch. ([Need help with branching?](https://github.com/Kunena/Kunena-Forum/wiki/Create-a-new-branch-with-git-and-manage-branches))
-5.  Name the branch something like  `user-xxx` where user is your username and xxx is the issue number you are addressing.
-6.  You should have [ESLint running in your editor](http://eslint.org/docs/user-guide/integrations.html), and it will highlight anything doesn't conform to [AirBnB's JavaScript Style Guide](https://github.com/airbnb/javascript).  Please do not ignore any linting errors, as they are meant to **help** you. Make sure none of your JavaScript is longer than 80 characters per line.
-7.  Once your code is ready, submit a pull request from your branch to Free Code Camp's `staging` branch. We'll do a quick code review and give you feedback, then iterate from there.
-8.  Once we accept one of your pull requests, one of the project owners (currently @quincylarson, @terakilobyte, and @berkeleytrue) will add you to our camper contributor group.
+5.  Name the branch something like `fix/xxx` or `feature/xxx` where `xxx` is a short description of the changes or feature you are attempting to add. For example `fix/email-login` would be a branch where I fix something specific to email login.
+6.  You should have [ESLint running in your editor](http://eslint.org/docs/user-guide/integrations.html), and it will highlight anything doesn't conform to [Free Code Camp's JavaScript Style Guide](https://github.com/FreeCodeCamp/FreeCodeCamp/wiki/Free-Code-Camp-JavaScript-Style-Guide) (you can find a summary of those rules [here](https://github.com/FreeCodeCamp/FreeCodeCamp/blob/staging/.eslintrc). Please do not ignore any linting errors, as they are meant to **help** you and to ensure a clean and simple code base. Make sure none of your JavaScript is longer than 80 characters per line.
+7.  Once your code is ready, submit a [pull request](https://github.com/FreeCodeCamp/FreeCodeCamp/wiki/Pull-Request-Contribute) from your branch to Free Code Camp's `staging` branch. We'll do a quick code review and give you feedback, then iterate from there. It may also be helpful to read about git [rebasing](https://github.com/FreeCodeCamp/FreeCodeCamp/wiki/git-rebase).
 
 Prerequisites
 -------------
@@ -51,23 +56,28 @@ The easiest way to get started is to clone the repository:
 # Get the latest snapshot
 git clone --depth=1 https://github.com/freecodecamp/freecodecamp.git freecodecamp
 
+# Change directory
 cd freecodecamp
 
 # Install NPM dependencies
 npm install
+
+# Install Gulp globally
+npm install -g gulp
+
+# Install Bower globally
+npm install -g bower
 
 # Install Bower dependencies
 bower install
 
 # Create a .env file and populate it with the necessary API keys and secrets:
 touch .env
-
 ```
 
-Edit your .env file with the following API keys accordingly (if you only use email login, only the MONGOHQ_URL, SESSION_SECRET, MANDRILL_USER and MANDRILL_PASSWORD fields are necessary. Keep in mind if you want to use more services you'll have to get your own API keys for those services.
+Edit your `.env` file with the following API keys accordingly. If you only use email login, only the `MONGOHQ_URL`, `SESSION_SECRET`, `MANDRILL_USER` and `MANDRILL_PASSWORD` fields are necessary. Keep in mind if you want to use more services you'll have to get your own API keys for those services. If you only use a subset or no OAuth2 authentication methods, you may want to remove them from ```server/passport-providers.js``` - otherwise the server will complain about missing clientIDs at launch.
 
 ```
-
 MONGOHQ_URL='mongodb://localhost:27017/freecodecamp'
 
 FACEBOOK_ID=stuff
@@ -94,100 +104,29 @@ TWITTER_TOKEN=stuff
 TWITTER_TOKEN_SECRET=stuff
 
 BLOGGER_KEY=stuff
-SLACK_WEBHOOK=stuff
 
 SESSION_SECRET=secretstuff
 COOKIE_SECRET='this is a secret'
 
 PEER=stuff
 DEBUG=true
-
 ```
 
 ```bash
-
-# Start the mongo server
+# Start the mongo server in a seperate terminal
 mongod
 
-# Seed your database with the challenges
-node seed/
+# Initialize Free Code Camp
+# This will seed the database for the first time.
+# This command should only be run once.
+npm run first-time
 
 # start the application
 gulp
-
 ```
+Now navigate to your browser and open http://localhost:3001
+If the app loads, congratulations - you're all set. Otherwise, let us know by opening a GitHub issue and with your error.
 
-
-Project Structure
------------------
-
-| Name                               | Description                                                 |
-| ---------------------------------- |:-----------------------------------------------------------:|
-| **config**/passport.js             | Passport Local and OAuth strategies, plus login middleware. |
-| **config**/secrets.js              | Your API keys, tokens, passwords and database URL.          |
-| **controllers**/contact.js         | Controller for contact form.                                |
-| **controllers**/home.js            | Controller for home page (index).                           |
-| **controllers**/user.js            | Controller for user account management.                     |
-| **controllers**/challenges.js      | Controller for rendering the challenges.                    |
-| **models**/user.json                 | Mongoose schema and model for User.                         |
-| **models**/challenge.json            | Mongoose schema and model for Challenge.                    |
-| **public**/                        | Static assets (fonts, css, js, img).                        |
-| **public**/**js**/application.js   | Specify client-side JavaScript dependencies.                |
-| **public**/**js**/main_0.0.2.js          | Place your client-side JavaScript here.                     |
-| **public**/**css**/main.less       | Main stylesheet for the app.                                |
-| **views/account**/                 | Templates for *login, password reset, signup, profile*.     |
-| **views/partials**/flash.jade      | Error, info and success flash notifications.                |
-| **views/partials**/navigation.jade | Navbar partial template.                                    |
-| **views/partials**/footer.jade     | Footer partial template.                                    |
-| **views**/layout.jade              | Base template.                                              |
-| **views**/home.jade                | Home page template.                                         |
-| server.js                             | Main application file.                                      |
-
-
-List of Packages
-----------------
-
-| Package                         | Description                                                          |
-| ------------------------------- |:--------------------------------------------------------------------:|
-| async                           | Utility library that provides asynchronous control flow.             |
-| bcrypt-nodejs                   | Library for hashing and salting user passwords.                      |
-| cheerio                         | Scrape web pages using jQuery-style syntax.                          |
-| clockwork                       | Clockwork SMS API library.                                           |
-| connect-assets                  | Compiles LESS stylesheets, concatenates & minifies JavaScript.       |
-| connect-mongo                   | MongoDB session store for Express.                                   |
-| csso                            | Dependency for connect-assets library to minify CSS.                 |
-| express                         | Node.js web framework.                                               |
-| body-parser                     | Express 4.0 middleware.                                              |
-| cookie-parser                   | Express 4.0 middleware.                                              |
-| express-session                 | Express 4.0 middleware.                                              |
-| morgan                          | Express 4.0 middleware.                                              |
-| compression                     | Express 4.0 middleware.                                              |
-| errorhandler                    | Express 4.0 middleware.                                              |
-| method-override                 | Express 4.0 middleware.                                              |
-| express-flash                   | Provides flash messages for Express.                                 |
-| express-validator               | Easy form validation for Express.                                    |
-| fbgraph                         | Facebook Graph API library.                                          |
-| github-api                      | GitHub API library.                                                  |
-| jade                            | Template engine for Express.                                         |
-| less                            | LESS compiler. Used implicitly by connect-assets.                    |
-| helmet                          | Restricts Cross site requests. You can modify its settings in server.js |
-| mongoose                        | MongoDB ODM.                                                         |
-| nodemailer                      | Node.js library for sending emails.                                  |
-| passport                        | Simple and elegant authentication library for node.js                |
-| passport-facebook               | Sign-in with Facebook plugin.                                        |
-| passport-github                 | Sign-in with GitHub plugin.                                          |
-| passport-google-oauth           | Sign-in with Google plugin.                                          |
-| passport-twitter                | Sign-in with Twitter plugin.                                         |
-| passport-local                  | Sign-in with Username and Password plugin.                           |
-| passport-linkedin-oauth2        | Sign-in with LinkedIn plugin.                                        |
-| passport-oauth                  | Allows you to set up your own OAuth 1.0a and OAuth 2.0 strategies.   |
-| request                         | Simplified HTTP request library.                                     |
-| lodash                          | Handy JavaScript utilities library.                                   |
-| uglify-js                       | Dependency for connect-assets library to minify JS.                  |
-| mocha                           | Test framework.                                                      |
-| chai                            | BDD/TDD assertion library.                                           |
-| supertest                       | HTTP assertion library.                                              |
-| multiline                       | Multi-line strings for the generator.                                |
 
 License
 -------

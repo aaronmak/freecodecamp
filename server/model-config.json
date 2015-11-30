@@ -47,12 +47,17 @@
     "dataSource": "db",
     "public": true
   },
+  "pledge": {
+    "dataSource": "db",
+    "public": true
+  },
+  "promo": {
+    "dataSource": "db",
+    "public": true
+  },
   "user": {
     "dataSource": "db",
-    "public": true,
-    "options": {
-      "emailVerificationRequired": true
-    }
+    "public": true
   },
   "userCredential": {
     "dataSource": "db",

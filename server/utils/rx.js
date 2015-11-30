@@ -1,7 +1,9 @@
-var Rx = require('rx');
-var debug = require('debug')('freecc:rxUtils');
+import Rx from 'rx';
+import debugFactory from 'debug';
 
-exports.saveInstance = function saveInstance(instance) {
+const debug = debugFactory('freecc:rxUtils');
+
+export function saveInstance(instance) {
   return new Rx.Observable.create(function(observer) {
     if (!instance || typeof instance.save !== 'function') {
       debug('no instance or save method');
@@ -17,25 +19,15 @@ exports.saveInstance = function saveInstance(instance) {
       observer.onCompleted();
     });
   });
-};
+}
 
 // alias saveInstance
-exports.saveUser = exports.saveInstance;
+export const saveUser = saveInstance;
 
-exports.observableQueryFromModel =
-  function observableQueryFromModel(Model, method, query) {
-    return Rx.Observable.fromNodeCallback(Model[method], Model)(query);
-  };
+export function observeQuery(Model, method, query) {
+  return Rx.Observable.fromNodeCallback(Model[method], Model)(query);
+}
 
-exports.observeMethod = function observeMethod(context, methodName) {
+export function observeMethod(context, methodName) {
   return Rx.Observable.fromNodeCallback(context[methodName], context);
-};
-
-// add rx methods to express
-exports.rxMiddleware = function rxMiddleware() {
-  return function rxMiddleware(req, res, next) {
-    // render to observable
-    res.render$ = Rx.Observable.fromNodeCallback(res.render, res);
-    next();
-  };
-};
+}

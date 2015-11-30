@@ -1,94 +1,63 @@
 /* eslint-disable no-process-exit */
 require('babel/register');
 require('dotenv').load();
-var fs = require('fs'),
-    path = require('path'),
-    app = require('../server/server'),
-    nonprofits = require('./nonprofits.json'),
-    jobs = require('./jobs.json');
 
-var challangesRegex = /^(bonfire:|waypoint:|zipline:|basejump:|hike:)/i;
+var Rx = require('rx'),
+    _ = require('lodash'),
+    getChallenges = require('./getChallenges'),
+    app = require('../server/server');
 
-function getFilesFor(dir) {
-  return fs.readdirSync(path.join(__dirname, '/' + dir));
-}
 
 var Challenge = app.models.Challenge;
-var Nonprofit = app.models.Nonprofit;
-var Job = app.models.Job;
-var counter = 0;
-var challenges = getFilesFor('challenges');
-var offerings = 2 + challenges.length;
+var destroy = Rx.Observable.fromNodeCallback(Challenge.destroyAll, Challenge);
+var create = Rx.Observable.fromNodeCallback(Challenge.create, Challenge);
 
-var CompletionMonitor = function() {
-  counter++;
-  console.log('call ' + counter);
+destroy()
+  .flatMap(function() { return Rx.Observable.from(getChallenges()); })
+  .flatMap(function(challengeSpec) {
+    var order = challengeSpec.order;
+    var block = challengeSpec.name;
+    var isBeta = !!challengeSpec.isBeta;
+    var fileName = challengeSpec.fileName;
+    console.log('parsed %s successfully', block);
 
-  if (counter < offerings) {
-    return;
-  } else {
-    process.exit(0);
-  }
-};
+    // challenge file has no challenges...
+    if (challengeSpec.challenges.length === 0) {
+      return Rx.Observable.just([{ block: 'empty ' + block }]);
+    }
 
-Challenge.destroyAll(function(err, info) {
-  if (err) {
-    console.error(err);
-  } else {
-    console.log('Deleted ', info);
-  }
-  challenges.forEach(function(file) {
-    var challenges = require('./challenges/' + file).challenges
-      .map(function(challenge) {
+    var challenges = challengeSpec.challenges
+      .map(function(challenge, index) {
         // NOTE(berks): add title for displaying in views
-        challenge.title = challenge.name.replace(challangesRegex, '').trim();
+        challenge.name =
+          _.capitalize(challenge.type) +
+          ': ' +
+          challenge.title.replace(/[^a-zA-Z0-9\s]/g, '');
+
+        challenge.dashedName = challenge.name
+          .toLowerCase()
+          .replace(/\:/g, '')
+          .replace(/\s/g, '-');
+
+        challenge.fileName = fileName;
+        challenge.order = order;
+        challenge.suborder = index + 1;
+        challenge.block = block;
+        challenge.isBeta = challenge.isBeta || isBeta;
+        challenge.time = challengeSpec.time;
+
         return challenge;
       });
 
-    Challenge.create(
-      challenges,
-      function(err) {
-        if (err) {
-          console.log(err);
-        } else {
-          console.log('Successfully parsed %s', file);
-          CompletionMonitor();
-        }
-      }
-    );
-  });
-});
-
-Nonprofit.destroyAll(function(err, info) {
-  if (err) {
-    console.error(err);
-  } else {
-    console.log('Deleted ', info);
-  }
-  Nonprofit.create(nonprofits, function(err, data) {
-    if (err) {
-      console.log(err);
-    } else {
-      console.log('Saved ', data);
+    return create(challenges);
+  })
+  .subscribe(
+    function(challenges) {
+      console.log('%s successfully saved', challenges[0].block);
+    },
+    function(err) { throw err; },
+    function() {
+      console.log('challenge seed completed');
+      process.exit(0);
     }
-    CompletionMonitor();
-    console.log('nonprofits');
-  });
-});
-
-Job.destroyAll(function(err, info) {
-  if (err) {
-    console.error(err);
-  } else {
-    console.log('Deleted ', info);
-  }
-  Job.create(jobs, function(err, data) {
-    if (err) {
-      console.log(err);
-    } else {
-      console.log('Saved ', data);
-    }
-    console.log('jobs');
-    CompletionMonitor();
-  });
-});
+  );

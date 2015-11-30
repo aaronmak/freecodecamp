@@ -2,22 +2,25 @@ var Rx = require('rx'),
     assign = require('object.assign'),
     sanitizeHtml = require('sanitize-html'),
     moment = require('moment'),
-    mongodb = require('mongodb'),
     debug = require('debug')('freecc:cntr:story'),
     utils = require('../utils'),
     observeMethod = require('../utils/rx').observeMethod,
     saveUser = require('../utils/rx').saveUser,
     saveInstance = require('../utils/rx').saveInstance,
-    MongoClient = mongodb.MongoClient,
-    validator = require('validator'),
-    secrets = require('../../config/secrets');
+    validator = require('validator');
 
-var foundationDate = 1413298800000;
-var time48Hours = 172800000;
+import {
+  ifNoUser401,
+  ifNoUserRedirectTo
+} from '../utils/middleware';
 
-var unDasherize = utils.unDasherize;
-var dasherize = utils.dasherize;
-var getURLTitle = utils.getURLTitle;
+const foundationDate = 1413298800000;
+const time48Hours = 172800000;
+
+const unDasherize = utils.unDasherize;
+const dasherize = utils.dasherize;
+const getURLTitle = utils.getURLTitle;
+const sendNonUserToNews = ifNoUserRedirectTo('/news');
 
 function hotRank(timeValue, rank) {
   /*
@@ -59,16 +62,26 @@ module.exports = function(app) {
   var findStoryById = observeMethod(Story, 'findById');
   var countStories = observeMethod(Story, 'count');
 
+  router.post('/news/userstories', userStories);
   router.get('/news/hot', hotJSON);
+  router.get('/news/feed', RSSFeed);
   router.get('/stories/hotStories', hotJSON);
-  router.get('/stories/submit', submitNew);
-  router.get('/stories/submit/new-story', preSubmit);
-  router.post('/stories/preliminary', newStory);
-  router.post('/stories/', storySubmission);
+  router.get(
+    '/stories/submit',
+    sendNonUserToNews,
+    submitNew
+  );
+  router.get(
+    '/stories/submit/new-story',
+    sendNonUserToNews,
+    preSubmit
+  );
+  router.post('/stories/preliminary', ifNoUser401, newStory);
+  router.post('/stories/', ifNoUser401, storySubmission);
   router.get('/news/', hot);
   router.post('/stories/search', getStories);
   router.get('/news/:storyName', returnIndividualStory);
-  router.post('/stories/upvote/', upvote);
+  router.post('/stories/upvote/', ifNoUser401, upvote);
   router.get('/stories/:storyName', redirectToNews);
 
   app.use(router);
@@ -93,14 +106,43 @@ module.exports = function(app) {
     );
   }
 
+  function RSSFeed(req, res, next) {
+    var query = {
+      order: 'timePosted DESC',
+      limit: 1000
+    };
+    findStory(query).subscribe(
+      function(stories) {
+        var sliceVal = stories.length >= 100 ? 100 : stories.length;
+        var data = stories.sort(sortByRank).slice(0, sliceVal);
+        res.set('Content-Type', 'text/xml');
+        res.render('feed', {
+          title: 'FreeCodeCamp Camper News RSS Feed',
+          description: 'RSS Feed for FreeCodeCamp Top 100 Hot Camper News',
+          url: 'http://www.freecodecamp.com/news',
+          FeedPosts: data
+        });
+      },
+      next
+    );
+  }
+
   function hot(req, res) {
     return res.render('stories/index', {
-      title: 'Hot stories currently trending on Camper News',
+      title: 'Top Stories on Camper News',
       page: 'hot'
     });
   }
 
   function submitNew(req, res) {
+    if (!req.user.isGithubCool) {
+      req.flash('errors', {
+        msg: 'You must link GitHub with your account before you can post' +
+          ' on Camper News.'
+      });
+      return res.redirect('/news');
+    }
+
     return res.render('stories/index', {
       title: 'Submit a new story to Camper News',
       page: 'submit'
@@ -109,6 +151,10 @@ module.exports = function(app) {
 
   function preSubmit(req, res) {
     var data = req.query;
+    if (typeof data.url !== 'string') {
+      req.flash('errors', { msg: 'No URL supplied with story' });
+      return res.redirect('/news');
+    }
     var cleanedData = cleanData(data.url);
 
     if (data.url.replace(/&/g, '&amp;') !== cleanedData) {
@@ -165,9 +211,7 @@ module.exports = function(app) {
           title: story.headline,
           link: story.link,
           originalStoryLink: dashedName,
-          originalStoryAuthorEmail: story.author.email || '',
           author: story.author,
-          description: story.description,
           rank: story.upVotes.length,
           upVotes: story.upVotes,
           id: story.id,
@@ -182,45 +226,75 @@ module.exports = function(app) {
     );
   }
 
-  function getStories(req, res, next) {
-    MongoClient.connect(secrets.db, function(err, database) {
-      if (err) {
-        return next(err);
-      }
-      database.collection('stories').find({
-        '$text': {
-          '$search': req.body.data ? req.body.data.searchValue : ''
-        }
-      }, {
-        headline: 1,
-        timePosted: 1,
-        link: 1,
-        description: 1,
-        rank: 1,
-        upVotes: 1,
-        author: 1,
-        image: 1,
-        storyLink: 1,
-        metaDescription: 1,
-        textScore: {
-          $meta: 'textScore'
-        }
-      }, {
-        sort: {
-          textScore: {
-            $meta: 'textScore'
-          }
-        }
-      }).toArray(function(err, items) {
+  function userStories({ body: { search = '' } = {} }, res, next) {
+    if (!search || typeof search !== 'string') {
+      return res.sendStatus(404);
+    }
+
+    return app.dataSources.db.connector
+      .collection('story')
+      .find({
+        'author.username': search.toLowerCase().replace('$', '')
+      })
+      .toArray(function(err, items) {
         if (err) {
           return next(err);
         }
-        if (items !== null && items.length !== 0) {
+        if (items && items.length !== 0) {
+          return res.json(items.sort(sortByRank));
+        }
+        return res.sendStatus(404);
+      });
+  }
+
+  function getStories({ body: { search = '' } = {} }, res, next) {
+    if (!search || typeof search !== 'string') {
+      return res.sendStatus(404);
+    }
+
+    const query = {
+      '$text': {
+        // protect against NoSQL injection
+        '$search': search.replace('$', '')
+      }
+    };
+
+    const fields = {
+      headline: 1,
+      timePosted: 1,
+      link: 1,
+      description: 1,
+      rank: 1,
+      upVotes: 1,
+      author: 1,
+      image: 1,
+      storyLink: 1,
+      metaDescription: 1,
+      textScore: {
+        $meta: 'textScore'
+      }
+    };
+
+    const options = {
+      sort: {
+        textScore: {
+          $meta: 'textScore'
+        }
+      }
+    };
+
+    return app.dataSources.db.connector
+      .collection('story')
+      .find(query, fields, options)
+      .toArray(function(err, items) {
+        if (err) {
+          return next(err);
+        }
+        if (items && items.length !== 0) {
           return res.json(items);
         }
         return res.sendStatus(404);
       });
-    });
   }
 
   function upvote(req, res, next) {
@@ -234,7 +308,9 @@ module.exports = function(app) {
       .flatMap(function(user) {
         // if user deletes account then this will not exist
         if (user) {
-          user.progressTimestamps.push(Date.now());
+          user.progressTimestamps.push({
+            timestamp: Date.now()
+          });
         }
         return saveUser(user);
       })
@@ -259,8 +335,11 @@ module.exports = function(app) {
   }
 
   function newStory(req, res, next) {
-    if (!req.user) {
-      return next(new Error('Must be logged in'));
+    if (!req.user.isGithubCool) {
+      req.flash('errors', {
+        msg: 'You must authenticate with Github to post to Camper News'
+      });
+      return res.redirect('/news');
     }
     var url = req.body.data.url;
 
@@ -367,18 +446,18 @@ module.exports = function(app) {
           author: {
             picture: req.user.picture,
             userId: req.user.id,
-            username: req.user.username,
-            email: req.user.email
+            username: req.user.username
           },
           image: data.image,
           storyLink: storyLink,
-          metaDescription: data.storyMetaDescription,
-          originalStoryAuthorEmail: req.user.email
+          metaDescription: data.storyMetaDescription
         });
         return saveInstance(newStory);
       });
 
-    req.user.progressTimestamps.push(Date.now());
+    req.user.progressTimestamps.push({
+      timestamp: Date.now()
+    });
     return saveUser(req.user)
       .flatMap(savedStory)
       .subscribe(
